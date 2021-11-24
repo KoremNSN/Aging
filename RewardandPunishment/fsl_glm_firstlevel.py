@@ -32,7 +32,7 @@ fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
 #%%
 fwhm = 6
 tr = 1
-run = '4'
+run = '1'
 removeTR = 4 #Number of TR's to remove before initiating the analysis
 
 data_dir = os.path.abspath('/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives/fmriprep/')
