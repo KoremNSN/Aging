@@ -64,6 +64,10 @@ model {
 }
 
 generated quantities {
-  //array[N] real alphas = lognormal(aMu, aSig);  
-  //array[N] real betas = lognormal(bMu, bSig);  
+  vector[N] log_lik;
+  vector[N] y_hat;
+  for (j in 1:N) {
+    log_lik[j] = normal_lpdf(choice[j] | p_inv[j], 1);
+    y_hat[j] = normal_rng(p_inv[j], 1);
+    }
 }
