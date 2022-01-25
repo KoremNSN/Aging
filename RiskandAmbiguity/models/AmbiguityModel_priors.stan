@@ -57,9 +57,10 @@ model {
   bMu ~ normal(0, 0.7);
   nSig ~ exponential(1);
   nMu ~ normal(0, 1);
+  
   noise ~ lognormal(nMu, nSig);
   riskTol ~ lognormal(aMu, aSig);
-  ambTol ~ lognormal(bMu, bSig);
+  ambTol ~ normal(bMu, bSig);
   choice ~ binomial(1,p_inv);
 }
 

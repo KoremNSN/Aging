@@ -39,8 +39,8 @@ transformed parameters {
   
   
   for ( i in 1:N ) {
-      uLotto[i] = lotteryValues[i]^riskTol[ID[i]] * (lotteryProbabilities[i] - ambTol[ID[i]] * lotteryAmbiguities[i]/2);
-      uRef[i] = refValues[i]^riskTol[ID[i]] * (refProbabilities[i] - ambTol[ID[i]] * refAmbiguities[i]/2);
+      uLotto[i] = lotteryValues[i]^(2*riskTol[ID[i]]) * (lotteryProbabilities[i] - ambTol[ID[i]] * lotteryAmbiguities[i]/2);
+      uRef[i] = refValues[i]^(2*riskTol[ID[i]]) * (refProbabilities[i] - ambTol[ID[i]] * refAmbiguities[i]/2);
       p[i] = (uLotto[i] - uRef[i]) / noise[ID[i]];
        
   }
@@ -50,16 +50,21 @@ transformed parameters {
 }
 
 model {
+    
+  lambda ~ gamma(1, 1);
   
-  aSig ~ exponential(1);
-  aMu ~ normal(1, 1);
+  alpha ~ poisson(lambda);
+  beta ~ poisson(1);
+  
   bSig ~ normal(0, 1);
-  bMu ~ normal(0, 2);
+  bMu ~ normal(0, 0.7);
+  
   nSig ~ exponential(1);
   nMu ~ normal(0, 1);
+  
   noise ~ lognormal(nMu, nSig);
-  riskTol ~ lognormal(aMu, aSig);
-  ambTol ~ lognormal(bMu, bSig);
+  riskTol ~ beta(alpha, beta);
+  ambTol ~ normal(bMu, bSig);
   choice ~ binomial(1,p_inv);
 }
 
