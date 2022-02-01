@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH --j Aging_fp_21
-#SBATCH --array=1-47 # Replace indices with the right number of subjects
+#SBATCH --j Aging_fp_21_3
+#SBATCH --array=1 # Replace indices with the right number of subjects
 #SBATCH --time=48:00:00
 #SBATCH -n 1
 #SBATCH --cpus-per-task=4
@@ -15,11 +15,13 @@
 
 
 
-SUBJ=(sub-13 sub-18 sub-25 sub-36 sub-41 sub-50 sub-58 sub-66 sub-14 sub-19 
-      sub-26 sub-37 sub-42 sub-51 sub-60 sub-15 sub-20 sub-27 sub-38 sub-43 
-      sub-55 sub-61 sub-10 sub-16 sub-23 sub-30 sub-39 sub-44 sub-56 sub-62 
-      sub-11 sub-17 sub-24 sub-32 sub-40 sub-46 sub-57 sub-64 sub-55 sub-56 
-      sub-58 sub-60 sub-57 sub-61 sub-62 sub-64 sub-66)
+#SUBJ=(sub-13 sub-18 sub-25 sub-36 sub-41 sub-50 sub-58 sub-66 sub-14 sub-19 
+#      sub-26 sub-37 sub-42 sub-51 sub-60 sub-15 sub-20 sub-27 sub-38 sub-43 
+#      sub-55 sub-61 sub-10 sub-16 sub-23 sub-30 sub-39 sub-44 sub-56 sub-62 
+#      sub-11 sub-17 sub-24 sub-32 sub-40 sub-46 sub-57 sub-64 sub-55 sub-56 
+#      sub-58 sub-60 sub-57 sub-61 sub-62 sub-64 sub-66)
+
+SUBJ=(sub-64)
 
 BASE_DIR="/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging"
 BIDS_DIR="/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids" # change directory
