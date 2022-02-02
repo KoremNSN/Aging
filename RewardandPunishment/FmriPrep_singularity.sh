@@ -1,16 +1,18 @@
 #!/bin/bash
 #
 # This script loads an fMRIprep img file and automatically runs all the preprocessing phases on bids compatible dataset
-# Inorder to run it, you will have to make validate the dataset using
+# In order to run it, you will have to validate the dataset using
 # http://bids-standard.github.io/bids-validator/
 # or add the --skip-bids-validation decoration. 
-# Once your dataset is ready change the name of the job (what ever you feel like) on line 12
-# Change the number of participants on line 13
-# 
-#
+# Once your dataset is ready 
+# 1. change the name of the job (what ever you feel like) on line 14
+# 2. Change the number of participants on line 15
+# 3. add a list of subjects
+# 4. adjust foldrs
+# 5. run using the command sbatch FmriPrep_singularity.sh
 #
 #SBATCH --j Aging_1_47s # job name
-#SBATCH --array=1-47 # number of participants as range from 1 (i.e., for 5 participants: 1-5)
+#SBATCH --array=1-47 # number of participants as range starting at 1 (i.e., for 5 participants: 1-5)
 #SBATCH --time=48:00:00 # HPC will give you this amount of time to run the process. This is usually enough time
 #SBATCH -n 1 # how many nodes you are asking. This is running each subject on a differnt node so 1 is enough
 #SBATCH --cpus-per-task=4 # How many CPUs. This is enough cpus no need to change
@@ -23,7 +25,7 @@
 #SBATCH --mail-type=ALL
 # ------------------------------------------
 
-# enter subject list with only space between them and the "sub-" prefix (i.e. sub-10)
+# enter subject list with only space between them and the "sub-" prefix (i.e. sub-10 sub-11)
 SUBJ=(sub-13 sub-18 sub-25 sub-36 sub-41 sub-50 sub-58 sub-66 sub-14 sub-19 
       sub-26 sub-37 sub-42 sub-51 sub-60 sub-15 sub-20 sub-27 sub-38 sub-43 
       sub-55 sub-61 sub-10 sub-16 sub-23 sub-30 sub-39 sub-44 sub-56 sub-62 
