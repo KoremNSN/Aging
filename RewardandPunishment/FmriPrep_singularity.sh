@@ -1,15 +1,26 @@
 #!/bin/bash
 #
-# This script loads an fMRIprep img file and automatically runs all the preprocessing phases on bids compatible dataset
+# The fMRIPrep script is meant to streamline the preprocessing of fMRI dataset.
+# The input is a bids dataset 
+# The output is preprocessed data set ready for first level analysis. 
+# The script can be run on the complete dataset or every # subjects. Make sure all subjects are ran on the same fMRIPrep version.
+# This is a bash script and should be ran from the HPC terminal (HPC desktop/shell/VScode)
+# This script uses full path, hence, you do not have to be in a spesific directory to run it. 
+# Tip, create a new folder and run the script from it as the script produce (2*number of subject) log files
+#
+# Inorder for fMRIPrep to work cleanly without the need to create/load conda enviroment it is packed into a containr named singularity
+# The singularity is packed in an img file (no need to load a singulrity module).
+# This script loads the fMRIprep img file and automatically runs all the preprocessing phases on the bids compatible dataset.
 # In order to run it, you will have to validate the dataset using
 # http://bids-standard.github.io/bids-validator/
 # or add the --skip-bids-validation decoration. 
-# Once your dataset is ready 
-# 1. change the name of the job (what ever you feel like) on line 14
-# 2. Change the number of participants on line 15
+#
+# Once your dataset is ready (bids validated/decided to ignore) 
+# 1. change the name of the job (what ever you feel like) on line 25
+# 2. Change the number of participants on line 26
 # 3. add a list of subjects
-# 4. adjust foldrs
-# 5. run using the command sbatch FmriPrep_singularity.sh
+# 4. adjust directories path
+# 5. From the HPC terminal run using the command "sbatch FmriPrep_singularity.sh"
 #
 #SBATCH --j Aging_1_47s # job name
 #SBATCH --array=1-47 # number of participants as range starting at 1 (i.e., for 5 participants: 1-5)
@@ -17,10 +28,11 @@
 #SBATCH -n 1 # how many nodes you are asking. This is running each subject on a differnt node so 1 is enough
 #SBATCH --cpus-per-task=4 # How many CPUs. This is enough cpus no need to change
 #SBATCH --mem-per-cpu=8G # How much memory per CPU. This is enough memory no need to change
+
 # resouce you are using are nodes * CPUs * memory - if you go above 120 per subject you will have to wait a lot of time to get an opening
 # Outputs ----------------------------------
-#SBATCH -o %x-%A-%a.out # how the output will be called
-#SBATCH -e %x-%A-%a.err
+#SBATCH -o %x-%A-%a.out # this will give you the list of commands and there results (success/failure). If the run fails here you will get the spesifcs
+#SBATCH -e %x-%A-%a.err # this will give you a short file with what errors were during the execution
 #SBATCH --mail-user=nachshon.korem@yale.edu # replace with your email
 #SBATCH --mail-type=ALL
 # ------------------------------------------
@@ -32,7 +44,7 @@ SUBJ=(sub-13 sub-18 sub-25 sub-36 sub-41 sub-50 sub-58 sub-66 sub-14 sub-19
       sub-11 sub-17 sub-24 sub-32 sub-40 sub-46 sub-57 sub-64 sub-55 sub-56 
       sub-58 sub-60 sub-57 sub-61 sub-62 sub-64 sub-66)
 
-# adjust directories based on project
+# adjust directories path based on the bids directories
 BASE_DIR="/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging" # not really used, not sure why is it here
 BIDS_DIR="/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids" # Location of the bids folder.
 DERIVS_DIR="derivatives" # the derivatives folder should be inside the bids folder.
@@ -58,7 +70,7 @@ SINGULARITY_CMD="singularity run --cleanenv -B $HOME/.cache/templateflow:/templa
 # this is where the magic starts
 echo Starting ${SUBJ[$SLURM_ARRAY_TASK_ID-1]}
 
-# this is the line that runs the code. If you want to use --skip-bids-validation this is where it needs to go.
+# this is the line that runs the code. If you want to use --skip-bids-validation, enter it as part of the next line (before the --output-space decoration).
 cmd="${SINGULARITY_CMD} ${BIDS_DIR} ${BIDS_DIR}/${DERIVS_DIR} participant --participant-label ${SUBJ[$SLURM_ARRAY_TASK_ID-1]} -w /work/ -vv --omp-nthreads 8 --nthreads 12 --mem_mb 30000 --output-spaces MNI152NLin2009cAsym:res-2 anat fsnative fsaverage5 --cifti-output"
       # --use-aroma"
 
