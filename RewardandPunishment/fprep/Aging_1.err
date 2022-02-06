@@ -1,0 +1,3 @@
+Source the FSL configuration script using:
+     . /gpfs/ysm/apps/software/FSL/6.0.4-centos7_64/etc/fslconf/fsl.sh
+ To use FSLeyes GUI, load the separate FSLeyes module.

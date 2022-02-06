@@ -22,8 +22,9 @@ def collect_data(sub, contrast, base_dir):
     copes = glob(cope)
     vcopes = glob(vcope)
 
-    mask_name = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives/fmriprep/sub-'+sub+'/ses-1/func/sub-'+sub+'_ses-1_task-task2_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz'
-    '''
+    mask_name = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives/sub-'+sub+'/ses-1/func/sub-'+sub+'_ses-1_task-task2_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz'
+    ''' 
+    # create average mask - was found to produce bad results.
     mask_name = base_dir + '/mask.nii.gz' 
 
     if os.path.exists(mask_name):
@@ -37,13 +38,17 @@ def collect_data(sub, contrast, base_dir):
     '''
     return(copes, vcopes, mask_name)
 #%%
-subs = ['10', '11', '13', '14', '15', '16', '17', '18', '19',
-        '20', '23', '24', '25', '26', '27', '30', '32', '36',
-        '37', '38', '39', '40', '41', '42', '43']#, '44', '50', 
-        #'51']
-contrasts = ['1','2','3','4','5']
-home_dir = '/home/nk549/Documents/Aging/results/'
-for sub in subs:
+subject_list = ['10', '11', '13', '14', '15', '16','17', '18', '19',
+                '20', '23', '24', '25', '26', '27', 
+                '30', '32', '36', '37', '38', '39', 
+                '40', '41', '42', '43', '46', # '44',
+                '50', '51', '55', '56', '58', '57',
+                '60', '61', '62', '64', '66']
+
+contrasts = ['1', '2', '3', '4', '5', '6', '7']
+home_dir = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/results/fixedef/'
+
+for sub in subject_list:
     for contrast in contrasts:
         base_dir = os.path.join(home_dir, sub, contrast)
         try:

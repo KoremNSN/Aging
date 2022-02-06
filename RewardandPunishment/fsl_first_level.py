@@ -32,10 +32,10 @@ fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
 #%%
 fwhm = 6
 tr = 1
-run = '1'
+run = '4'
 removeTR = 4 #Number of TR's to remove before initiating the analysis
 
-data_dir = os.path.abspath('/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives/fmriprep/')
+data_dir = os.path.abspath('/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives/')
 output_dir = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/results/run-%s' %run
 #%% Methods 
 def _bids2nipypeinfo(in_file, events_file, regressors_file,
@@ -88,9 +88,12 @@ def _bids2nipypeinfo(in_file, events_file, regressors_file,
 
     return [runinfo], str(out_motion)
 #%%
-subject_list = ['13', '11', '14', '15', '16', '17', '18', '19', 
-                '20', '23', '24', '25', '26', '27', '30', '32', '36', 
-                '37', '38', '39', '40', '41', '42']
+subject_list = ['10', '11', '13', '14', '15', '16','17', '18', '19',
+                '20', '23', '24', '25', '26', '27', 
+                '30', '32', '36', '37', '38', '39', 
+                '40', '41', '42', '43', '46', # '44',
+                '50', '51', '55', '56', '58', '57',
+                '60', '61', '62', '64', '66']
 
 
 infosource = pe.Node(util.IdentityInterface(fields=['subject_id']),
@@ -101,7 +104,7 @@ infosource.iterables = [('subject_id', subject_list)]
 templates = {'func': data_dir + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task' + run + '_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
              'mask': data_dir + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task' + run + '_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
              'regressors': data_dir + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task' + run + '_desc-confounds_timeseries.tsv',
-             'events': '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/event_files/aging_{subject_id}/events_' + run + '.csv'}
+             'events': '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/event_files/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task' + run + '_events.csv'}
 
 selectfiles = pe.Node(nio.SelectFiles(templates,
                                       base_directory=data_dir),
@@ -146,10 +149,14 @@ cont1 = ['Money>picture', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'ne
 cont2 = ['Positive>Negative', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'negative_picture'], [0.5, -0.5, 0.5, -0.5]]
 cont3 = ['M_Positive>Negative', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'negative_picture'], [1, -1, 0, 0]]
 cont4 = ['P_Positive>Negative', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'negative_picture'], [0, 0, 1, -1]]
-cont5 = ['stim', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'negative_picture'], [0.25, 0.25, 0.25, 0.25]]
+cont5 = ['stim', 'T', ['mon_reward', 'mon_loss', 'pleasnt_picture', 'negative_picture', 
+         'act_mon_loss', 'act_mon_reward', 'act_negative_picture', 'act_pleasant_picture'], 
+         [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]]
+cont6 = ['act_images', 'T', ['act_negative_picture', 'act_pleasant_picture'], [-1, 1]]
+cont7 = ['money', 'T', ['act_mon_loss', 'act_mon_reward'], [-1, 1]]
 
 #%%
-contrasts = [cont1, cont2, cont3, cont4, cont5]
+contrasts = [cont1, cont2, cont3, cont4, cont5, cont6, cont7]
 
 level1design.inputs.interscan_interval = tr
 level1design.inputs.bases = {'dgamma': {'derivs': False}}
