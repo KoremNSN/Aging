@@ -27,10 +27,7 @@ from nipype import Node, Workflow, MapNode
 from nipype.interfaces import fsl
 from nipype.interfaces import spm
 from nipype.interfaces.matlab import MatlabCommand
-<<<<<<< HEAD
 from nipype.interfaces.utility import Function
-=======
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
 
 # SPM and FSL initiation
 
@@ -41,12 +38,17 @@ fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
 # Adjust locations
 
 data_root = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/Aging_Bids/derivatives'
-output_dir = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/spm'
+output_dir = '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/spm_reg'
 work_dir = '/home/nk549/scratch60/work'
 
 # subject list
 
-subject_list = [10, 11]
+subject_list = ['10', '11', '13', '14', '15', '16','17', '18', '19',
+                '20', '23', '24', '25', '26', '27', 
+                '30', '32', '36', '37', '38', '39', 
+                '40', '41', '42', '43', '46', # '44',
+                '50', '51', '55', '56', '58', '57',
+                '60', '61', '62', '64', '66']
 
 # basic experiment properties
 
@@ -56,7 +58,7 @@ removeTR = 4
 
 #%% regressors for design matrix
 
-def _bids2nipypeinfo(in_file, events_file, regressors_file,
+def _bids2nipypeinfo(in_file, events_file, ratings_file, regressors_file,
                      regressors_names=None,
                      motion_columns=None, removeTR = 4,
                      decimals=3, amplitude=1.0):
@@ -68,6 +70,8 @@ def _bids2nipypeinfo(in_file, events_file, regressors_file,
 
     # Process the events file
     events = pd.read_csv(events_file, sep = ',')
+    ratings = pd.read_csv(ratings_file)
+    ratings = ratings.set_axis(['PP', 'NP', 'MG', 'ML'], axis=1)
     bunch_fields = ['onsets', 'durations', 'amplitudes']
 
     if not motion_columns:
@@ -76,11 +80,8 @@ def _bids2nipypeinfo(in_file, events_file, regressors_file,
 
     out_motion = Path('motion.par').resolve()
     regress_data = pd.read_csv(regressors_file, sep=r'\s+')
-<<<<<<< HEAD
+    regress_data = ratings.merge(regress_data,  left_index=True, right_index=True)
     np.savetxt(out_motion, regress_data[motion_columns].values[removeTR:,], '%g')
-=======
-    np.savetxt(out_motion, regress_data[motion_columns].values, '%g')
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
     
     if regressors_names is None:
         regressors_names = sorted(set(regress_data.columns) - set(motion_columns))
@@ -97,10 +98,10 @@ def _bids2nipypeinfo(in_file, events_file, regressors_file,
     for condition in runinfo.conditions:
         event = events[events.trial_type.str.match(condition)]
 
-        runinfo.onsets.append(np.round(event.onset.values-removeTR, 3).tolist()) # added -removeTR to align to the onsets after removing X number of TRs from the scan
-        runinfo.durations.append(np.round(event.duration.values, 3).tolist())
+        runinfo.onsets.append(np.round(event.onset.values-removeTR, decimals).tolist()) # added -removeTR to align to the onsets after removing X number of TRs from the scan
+        runinfo.durations.append(np.round(event.duration.values, decimals).tolist())
         if 'amplitudes' in events.columns:
-            runinfo.amplitudes.append(np.round(event.amplitudes.values, 3).tolist())
+            runinfo.amplitudes.append(np.round(event.amplitudes.values, decimals).tolist())
         else:
             runinfo.amplitudes.append([amplitude] * len(event))
 
@@ -108,17 +109,10 @@ def _bids2nipypeinfo(in_file, events_file, regressors_file,
         runinfo.regressor_names = regressors_names
         runinfo.regressors = regress_data[regressors_names].fillna(0.0).values[removeTR:,].T.tolist() # adding removeTR to cut the first rows
 
-<<<<<<< HEAD
     return runinfo, str(out_motion)
 
 #%%
 infosource = pe.Node(util.IdentityInterface(fields=['subject_id']),
-=======
-    return [runinfo], str(out_motion)
-
-#%%
-infosource = pe.Node(util.IdentityInterface(fields=['subject_id'],),
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
                   name="infosource")
 
 infosource.iterables = [('subject_id', subject_list)]
@@ -126,7 +120,8 @@ infosource.iterables = [('subject_id', subject_list)]
 templates = {'func': data_root + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_space-MNI152NLin2009cAsym_res-2_desc-preproc_bold.nii.gz',
              'mask': data_root + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_space-MNI152NLin2009cAsym_res-2_desc-brain_mask.nii.gz',
              'regressors': data_root + '/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_desc-confounds_timeseries.tsv',
-             'events': '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/event_files_lvl/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_events.csv'}
+             'ratings': '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/event_files_bin/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_ratings.csv',
+             'events':  '/gpfs/gibbs/pi/levy_ifat/Nachshon/Aging/event_files_bin/sub-{subject_id}/ses-1/func/sub-{subject_id}_ses-1_task-task{task_id}_events.csv'}
 
 # Flexibly collect data from disk to feed into flows.
 selectfiles = pe.Node(nio.SelectFiles(templates,
@@ -136,13 +131,13 @@ selectfiles = pe.Node(nio.SelectFiles(templates,
 selectfiles.inputs.task_id = [1,2,3,4]   
         
 runinfo = MapNode(util.Function(
-    input_names=['in_file', 'events_file', 'regressors_file', 'regressors_names', 'removeTR', 'motion_columns'],
+    input_names=['in_file', 'events_file', 'ratings_file', 'regressors_file', 'regressors_names', 'removeTR', 'motion_columns'],
     function=_bids2nipypeinfo, output_names=['info', 'realign_file']),
     name='runinfo',
-    iterfield = ['in_file', 'events_file', 'regressors_file'])
+    iterfield = ['in_file', 'events_file', 'ratings_file', 'regressors_file'])
 
         
-runinfo.inputs.regressors_names = ['std_dvars', 'framewise_displacement'] + \
+runinfo.inputs.regressors_names = ['PP', 'NP', 'MG', 'ML', 'std_dvars', 'framewise_displacement'] + \
                                   ['a_comp_cor_%02d' % i for i in range(6)]
 runinfo.inputs.removeTR = removeTR                                  
  
@@ -152,11 +147,7 @@ runinfo.inputs.motion_columns   = ['trans_x', 'trans_x_derivative1', 'trans_x_de
                                   ['rot_x', 'rot_x_derivative1', 'rot_x_derivative1_power2', 'rot_x_power2'] + \
                                   ['rot_y', 'rot_y_derivative1', 'rot_y_derivative1_power2', 'rot_y_power2'] + \
                                   ['rot_z', 'rot_z_derivative1', 'rot_z_derivative1_power2', 'rot_z_power2']
-<<<<<<< HEAD
     
-=======
-                                  
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
 extract = pe.MapNode(fsl.ExtractROI(), name="extract", iterfield = ['in_file'])
 extract.inputs.t_min = removeTR
 extract.inputs.t_size = -1
@@ -178,82 +169,39 @@ level1design.inputs.interscan_interval = 1.
 level1design.inputs.bases = {'hrf': {'derivs': [0, 0]}}
 level1design.inputs.model_serial_correlations = 'AR(1)'
 
-<<<<<<< HEAD
 
 
 level1estimate = pe.Node(interface=spm.EstimateModel(), name="level1estimate")
 level1estimate.inputs.estimation_method = {'Classical': 1}
+#%%
+cont1 = ['PP', 'T', ['PP'],[1]]
+cont2 = ['NP', 'T', ['NP'],[1]]
+cont3 = ['MG', 'T', ['MG'],[1]]
+cont4 = ['ML', 'T', ['ML'],[1]]
+cont5 = ['pleasant_picture', 'T', ['PP'],[1]]
+cont6 = ['negative_picture', 'T', ['NP'],[1]]
+cont7 = ['mon_reward', 'T', ['MG'],[1]]
+cont8 = ['mon_loss', 'T', ['ML'],[1]]
 
-#%% contrasts
-import itertools
-
-event_types = [['pleasant_picture1', 'pleasant_picture2', 'pleasant_picture3', 'pleasant_picture4'],
-               ['negative_picture1', 'negative_picture2', 'negative_picture3', 'negative_picture4'],
-               ['mon_reward1', 'mon_reward2', 'mon_reward3', 'mon_reward4'],
-               ['mon_loss1', 'mon_loss2', 'mon_loss3', 'mon_loss4'],
-               ['act_pleasant_picture', 'act_negative_picture', 'act_mon_reward', 'act_mon_loss'], 
-               ['act_no']]
-
-cont1_events = event_types[0]+event_types[1]+event_types[2]+event_types[3]
-cont2_events = event_types[0]+event_types[2]+event_types[1]+event_types[3]
-cont3_events = event_types[2]+event_types[3]
-cont4_events = event_types[0]+event_types[1]
-cont5_events = list(itertools.chain(*event_types))
-cont6_events = event_types[4][:2]
-cont7_events = event_types[4][2:]
-
-cont1 = ['money>pictures', 'T',cont1_events, 
-                        [1/8,  1/8,  1/8,  1/8,  1/8,  1/8,  1/8,  1/8, 
-                        -1/8, -1/8, -1/8, -1/8, -1/8, -1/8, -1/8, -1/8]]
-cont2  = ['Positive>Negative', 'T', cont2_events,
-                        [1/8,  1/8,  1/8,  1/8,  1/8,  1/8,  1/8,  1/8, 
-                        -1/8, -1/8, -1/8, -1/8, -1/8, -1/8, -1/8, -1/8]]
-
-cont3  = ['M_Positive>Negative', 'T', cont3_events, [1/4, 1/4, 1/4, 1/4, -1/4, -1/4, -1/4, -1/4]]
-cont4  = ['M_Positive>Negative', 'T', cont3_events, [1/4, 1/4, 1/4, 1/4, -1/4, -1/4, -1/4, -1/4]]
-cont5  = ['stim', 'T', cont5_events, [1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21, 1/21]]
-
-cont6  = ['act_images', 'T', cont6_events,[1,-1]]
-cont7  = ['act_money', 'T', cont7_events,[1,-1]]
-
-cont8  = ['money_gain_l', 'T', event_types[2], [-1.5, -0.5, 0.5, 1.5]]
-cont9  = ['money_loss_l', 'T', event_types[3], [-1.5, -0.5, 0.5, 1.5]]
-
-cont10 = ['mg1','T',['mon_reward1'],[1]]
-cont11 = ['mg2','T',['mon_reward2'],[1]]
-cont12 = ['mg3','T',['mon_reward3'],[1]]
-cont13 = ['mg4','T',['mon_reward4'],[1]]
-
-cont14 = ['MG', 'F', [cont10, cont11, cont12, cont13]]
-
-
-
-contrasts = [cont1, cont2, cont3, cont4, cont5, cont6, cont7, cont8, cont9, cont10, cont11, cont12, cont13, cont14]
-
+contrasts = [cont1, cont2, cont3, cont4,cont5, cont6, cont7, cont8]
 
 contrastestimate = pe.Node(
     interface=spm.EstimateContrast(), name="contrastestimate")
 contrastestimate.overwrite = True
 contrastestimate.config = {'execution': {'remove_unnecessary_outputs': False}}
-contrastestimate.inputs.contrasts = contrasts               
+contrastestimate.inputs.contrasts = contrasts         
+
 #%% Connect workflow
 wfSPM = Workflow(name="l1spm_resp", base_dir=output_dir)
 wfSPM.connect([
         (infosource, selectfiles, [('subject_id', 'subject_id')]),
         (selectfiles, runinfo, [('events','events_file'),
+                                ('ratings','ratings_file'),
                                 ('regressors','regressors_file')]),
-=======
-#%% Connect workflow
-wfSPM = Workflow(name="l1spm_resp", base_dir=work_dir)
-wfSPM.connect([
-        (infosource, selectfiles, [('subject_id', 'subject_id')]),
-        (selectfiles, runinfo, [('events','events_file'),('regressors','regressors_file')]),
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
         (selectfiles, extract, [('func','in_file')]),
         (extract, smooth, [('roi_file','in_files')]),
         (smooth, runinfo, [('smoothed_files','in_file')]),
         (smooth, modelspec, [('smoothed_files', 'functional_runs')]),   
-<<<<<<< HEAD
         (runinfo, modelspec, [('info', 'subject_info'), 
                               ('realign_file', 'realignment_parameters')]),
         (modelspec, level1design, [("session_info", "session_info")]),
@@ -265,11 +213,3 @@ wfSPM.connect([
 
 #%% Run workflow
 wfSPM.run('MultiProc', plugin_args={'n_procs': 2})                                
-=======
-        (runinfo, modelspec, [('info', 'subject_info'), ('realign_file', 'realignment_parameters')]),
-        (modelspec, level1design, [("session_info", "session_info")])
-        ])
-
-#%% Run workflow
-wfSPM.run('MultiProc', plugin_args={'n_procs': 4})                                
->>>>>>> 4932b0509efbd46be276f973b031941ba801bfd2
