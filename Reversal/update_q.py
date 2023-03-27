@@ -159,3 +159,23 @@ def update_Q_rounai(stim, reward,
                                                                 Qs[tt.arange(n_subj),1], Qs[tt.arange(n_subj),0])))
         
     return Qs, vec, alpha
+
+def update_Q_age(stim, reward, ageT,
+             Qs,vec,
+             alpha, age, n_subj):
+    """
+    This function updates the Q table according to the RL update rule.
+    It will be called by theano.scan to do so recursevely, given the observed data and the alpha parameter
+    This could have been replaced be the following lamba expression in the theano.scan fn argument:
+        fn=lamba action, reward, Qs, alpha: tt.set_subtensor(Qs[action], Qs[action] + alpha * (reward - Qs[action]))
+    """
+     
+    PE = reward - Qs[tt.arange(n_subj), stim]
+    learnRate = alpha + age * Qs[tt.arange(n_subj),ageT]
+    
+    Qs = tt.set_subtensor(Qs[tt.arange(n_subj),stim], Qs[tt.arange(n_subj),stim] + learnRate * PE)
+    
+    vec = tt.set_subtensor(vec[tt.arange(n_subj),0], (tt.switch(tt.eq(stim,1), 
+                                                                Qs[tt.arange(n_subj),1], Qs[tt.arange(n_subj),0])))
+    
+    return Qs, vec
